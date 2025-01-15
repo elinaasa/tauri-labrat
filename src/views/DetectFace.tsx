@@ -2,17 +2,21 @@ import React, { useEffect, useRef } from 'react';
 
 import * as faceapi from 'face-api.js';
 import Camera from '@/components/Camera';
-import UseFaceDetection from '@/hooks/FaceHooks';
+import { useFaceDetection } from '@/hooks/FaceHooks';
 
 const DetectFace: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null); // Reference to the video element
-  const { detection, getDescriptors } = UseFaceDetection();
+  const { detection, getDescriptors } = useFaceDetection();
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const detectFace = async () => {
-      getDescriptors(videoRef);
+      try {
+        await getDescriptors(videoRef);
+      } catch (error) {
+        console.error('Error detecting face:', error);
+      }
 
       // Schedule the next detection
       timer = setTimeout(detectFace, 100);
