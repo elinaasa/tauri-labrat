@@ -1,25 +1,40 @@
 import React, { useEffect, useRef } from 'react';
 
-import * as faceapi from 'face-api.js';
 import Camera from '@/components/Camera';
 import { useFaceDetection } from '@/hooks/FaceHooks';
+import { useNavigate } from 'react-router';
+import { useDbContext } from '@/hooks/contextHooks';
 
 const DetectFace: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null); // Reference to the video element
-  const { detection, getDescriptors } = useFaceDetection();
+  const { detection, getDescriptors, matchFace } = useFaceDetection();
+  const navigate = useNavigate();
+  const { faces } = useDbContext();
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const detectFace = async () => {
+    // Detect face from video frames
+    const detectFace = async (faces: Float32Array[]) => {
       try {
-        await getDescriptors(videoRef);
+        const descriptorsResult = await getDescriptors(videoRef);
+        // matchFace
+        if (descriptorsResult) {
+          const match = await matchFace(
+            descriptorsResult.result.descriptor,
+            faces
+          );
+          console.log('mätsi', match);
+          navigate('/detected', {
+            state: descriptorsResult.labeledDescriptor.toJSON(),
+          });
+        }
       } catch (error) {
         console.error('Error detecting face:', error);
       }
 
       // Schedule the next detection
-      timer = setTimeout(detectFace, 100);
+      timer = setTimeout(detectFace, 100, faces);
     };
 
     // Initialize the video feed and start detection
@@ -28,11 +43,16 @@ const DetectFace: React.FC = () => {
         if (videoRef.current) {
           // Wait for the video element to be ready
           await new Promise<void>((resolve) => {
-            if (videoRef.current!.readyState >= 2) resolve();
-            else videoRef.current!.oncanplay = () => resolve();
+            if (videoRef.current!.readyState >= 2) {
+              resolve();
+            } else {
+              videoRef.current!.oncanplay = () => resolve();
+            }
           });
 
-          detectFace(); // Start detecting faces
+          if (faces) {
+            detectFace(faces); // Start detecting faces
+          }
         }
       } catch (error) {
         console.error('Error initializing video feed:', error);
@@ -43,14 +63,18 @@ const DetectFace: React.FC = () => {
 
     // Cleanup on unmount
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
   }, []);
 
+  // console.log('Detection object', detection);
+
   return (
-    <div style={{ textAlign: 'center', position: 'relative' }}>
-      <h1 style={{ padding: '20px' }}>Face Detection</h1>
-      <div>
+    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+      <h1>Face Detection</h1>
+      <div style={{ position: 'relative' }}>
         <Camera ref={videoRef} width={800} aspect={16 / 9} />
         {detection && (
           <div

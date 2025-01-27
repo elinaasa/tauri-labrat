@@ -2,6 +2,16 @@ import { RefObject, useEffect, useState } from 'react';
 import * as faceapi from 'face-api.js';
 import randomstring from '@/lib/randomstring';
 
+type DetectionResult = {
+  result: faceapi.WithFaceDescriptor<
+    faceapi.WithFaceLandmarks<
+      { detection: faceapi.FaceDetection },
+      faceapi.FaceLandmarks68
+    >
+  >;
+  labeledDescriptor: faceapi.LabeledFaceDescriptors;
+};
+
 const useFaceDetection = () => {
   const [detection, setDetection] = useState<faceapi.FaceDetection | null>(
     null
@@ -23,7 +33,9 @@ const useFaceDetection = () => {
     loadModels();
   }, []);
 
-  const getDescriptors = async (videoRef: RefObject<HTMLVideoElement>) => {
+  const getDescriptors = async (
+    videoRef: RefObject<HTMLVideoElement>
+  ): Promise<DetectionResult | undefined> => {
     if (!videoRef.current) {
       return;
     }
@@ -38,17 +50,34 @@ const useFaceDetection = () => {
       return;
     }
 
-    const faceName = randomstring(5);
+    const faceName = randomstring(6);
     const labeledDescriptor = new faceapi.LabeledFaceDescriptors(faceName, [
       result.descriptor,
     ]);
-
     console.log('result', labeledDescriptor);
 
     setDetection(result.detection);
+
+    return { result, labeledDescriptor };
   };
 
-  return { detection, getDescriptors };
+  const matchFace = async (
+    currentDescriptors: Float32Array,
+    descriptorsFromDB: Float32Array[]
+  ) => {
+    console.log('pöö', descriptorsFromDB, 'hep', currentDescriptors);
+    if (descriptorsFromDB && descriptorsFromDB.length > 0) {
+      const faceMatcher = new faceapi.FaceMatcher(
+        descriptorsFromDB.map((descriptor) => {
+          return faceapi.LabeledFaceDescriptors.fromJSON(descriptor);
+        })
+      );
+      console.log('mätser', faceMatcher);
+      return faceMatcher.matchDescriptor(currentDescriptors);
+    }
+  };
+
+  return { detection, getDescriptors, matchFace };
 };
 
 export { useFaceDetection };
