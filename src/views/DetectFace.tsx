@@ -3,13 +3,13 @@ import React, { useEffect, useRef } from 'react';
 import Camera from '@/components/Camera';
 import { useFaceDetection } from '@/hooks/FaceHooks';
 import { useNavigate } from 'react-router';
-import { useDbContext } from '@/hooks/contextHooks';
+import { useStore } from '@/stores/DBStore';
 
 const DetectFace: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null); // Reference to the video element
   const { detection, getDescriptors, matchFace } = useFaceDetection();
   const navigate = useNavigate();
-  const { faces } = useDbContext();
+  const { faces } = useStore();
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -18,8 +18,14 @@ const DetectFace: React.FC = () => {
     const detectFace = async (faces: Float32Array[]) => {
       try {
         const descriptorsResult = await getDescriptors(videoRef);
+        // save first face to db
         // matchFace
         if (descriptorsResult) {
+          if (faces.length === 0) {
+            navigate('/detected', {
+              state: descriptorsResult.labeledDescriptor.toJSON(),
+            });
+          }
           const match = await matchFace(
             descriptorsResult.result.descriptor,
             faces

@@ -1,5 +1,5 @@
 import Loki from 'lokijs';
-import { Vote } from '../types/localTypes';
+import { Vote } from '@/types/localTypes';
 import { create } from 'zustand';
 
 type DBState = {
@@ -11,7 +11,7 @@ type DBState = {
   votes: (Vote & LokiObj)[];
 };
 
-type DBStore = {
+type DBStore = DBState & {
   init: () => Promise<void>;
   addFaces: (face: Float32Array) => Float32Array | undefined;
   addVotes: (vote: Vote) => Vote | undefined;
