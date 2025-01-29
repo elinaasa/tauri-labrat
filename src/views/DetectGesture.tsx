@@ -1,15 +1,21 @@
 import Camera from '@/components/Camera';
 import { useGestureRecognition } from '@/hooks/GestureHooks';
 import { ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react';
-import { useRef } from 'react';
-import { useParams } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router';
 
 const DetectGesture = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  useGestureRecognition(videoRef);
+  const { gesture, savedGesture } = useGestureRecognition(videoRef);
 
   const { faceName } = useParams();
-  const { gesture } = useGestureRecognition(videoRef);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (gesture === 'Pointing_Up' && savedGesture) {
+      navigate('/result', { state: { vote: savedGesture, faceName } });
+    }
+  }, [gesture]);
 
   return (
     <>

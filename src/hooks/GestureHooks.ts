@@ -3,6 +3,7 @@ import { GestureRecognizer, FilesetResolver } from '@mediapipe/tasks-vision';
 
 const useGestureRecognition = (videoRef: RefObject<HTMLVideoElement>) => {
   const [gesture, setGesture] = useState('');
+  const [savedGesture, setSavedGesture] = useState('');
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -30,14 +31,18 @@ const useGestureRecognition = (videoRef: RefObject<HTMLVideoElement>) => {
           videoRef.current,
           nowInMs
         );
+
         results.gestures.forEach((categories) => {
           categories.forEach((category) => {
             const currentGesture = category.categoryName;
-            if (currentGesture !== gesture) {
+            if (currentGesture !== 'None') {
               if (
                 currentGesture === 'Thumb_Up' ||
                 currentGesture === 'Thumb_Down'
               ) {
+                setGesture(currentGesture);
+                setSavedGesture(currentGesture);
+              } else if (currentGesture !== gesture) {
                 setGesture(currentGesture);
               }
             }
@@ -64,10 +69,22 @@ const useGestureRecognition = (videoRef: RefObject<HTMLVideoElement>) => {
         console.log(error);
       }
     };
+
     main();
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      if (gestureRecognizer) {
+        gestureRecognizer.close();
+        gestureRecognizer = null;
+      }
+    };
   }, []);
-  console.log(gesture);
-  return { gesture };
+
+  console.log(gesture, savedGesture);
+  return { gesture, savedGesture };
 };
 
 export { useGestureRecognition };
