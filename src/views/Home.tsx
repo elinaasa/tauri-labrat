@@ -1,13 +1,26 @@
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/stores/DBStore';
+import { useEffect } from 'react';
 import { NavLink } from 'react-router';
 
 const Home = () => {
   const { faces, votes, deleteAllFromDB } = useStore();
+  const [results, setResults] = useState({ positives: 0, negatives: 0 });
+
+  useEffect(() => {
+    try {
+      const positives = votes.filter((v) => v.vote === 'Thumb_Up').length;
+      const negatives = votes.filter((v) => v.vote === 'Thumb_Down').length;
+      setResults({ positives, negatives });
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   const handleClearDatabase = () => {
     try {
       deleteAllFromDB();
+      setResults({ positives: 0, negatives: 0 });
     } catch (error) {
       console.error(error);
     }
