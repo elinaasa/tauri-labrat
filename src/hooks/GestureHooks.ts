@@ -30,9 +30,19 @@ const useGestureRecognition = (videoRef: RefObject<HTMLVideoElement>) => {
           videoRef.current,
           nowInMs
         );
-        if (results.gestures.length > 0) {
-          console.log(results.gestures[0][0].categoryName);
-        }
+        results.gestures.forEach((categories) => {
+          categories.forEach((category) => {
+            const currentGesture = category.categoryName;
+            if (currentGesture !== gesture) {
+              if (
+                currentGesture === 'Thumb_Up' ||
+                currentGesture === 'Thumb_Down'
+              ) {
+                setGesture(currentGesture);
+              }
+            }
+          });
+        });
       }
       timer = setTimeout(processVideoFrames, 100);
     };
@@ -54,9 +64,10 @@ const useGestureRecognition = (videoRef: RefObject<HTMLVideoElement>) => {
         console.log(error);
       }
     };
-
     main();
   }, []);
+  console.log(gesture);
+  return { gesture };
 };
 
 export { useGestureRecognition };
